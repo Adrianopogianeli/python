@@ -31,36 +31,47 @@ class OracleChangeScript:
 
 
     def ImportMetrics(self, arquivo,dicRemove):
-        msn = "Zuado"
+
         row_delete = OracleChangeScript()
         if row_delete.ReplaceLine(arquivo,dicRemove) is True:
             mysql = clsDB()
             command_db = "create database oracle"
-            command_table = "create table metrics(METRIC_NAME varchar(50),DBID BIGINT,INSTANCE_NUMBER INT, \
+            command_table = "create table metrics(SCRIPT varchar(200),METRIC_NAME varchar(50),DBID BIGINT,INSTANCE_NUMBER INT, \
                              SNAP_ID INT,TIMEREF INT,END_TIME DATETIME,MINVAL FLOAT,  \
 		    			     MAXVAL FLOAT,AVERAGE FLOAT,STANDARD_DEVIATION FLOAT)"
             
-            row_insert =[]
             f = open(arquivo,"r")
             novo_arquivo = f.readlines()
             f.close()
             for line in novo_arquivo:
                 if len(line)>0:
-                    array_1 = re.split(r'\s{2,}', line) # Para extrair o METRIC_NAME
-                    array = re.split(r' ', line) # Para extrair os demais campos
-                    METRIC_NAME = array_1[0]
-                    DBID = array_1[1:2] 
-                    INSTANCE_NUMBER = array_1[2:3]
-                    string = (" ".join(str(x) for x in array_1[3:4])).split()
-                    SNAP_ID = string[:1]
-                    TIMEREF = string[1:]
-                    END_TIME = array_1[4:5]
-                    MINVAL = array[(len(array) - 2)]
-                    #print array
-                    print "%s -> %s -> %s -> %s -> %s -> %s -> %s"%(METRIC_NAME,DBID,INSTANCE_NUMBER,SNAP_ID,TIMEREF,END_TIME,MINVAL)
-                    #print "%s %s %s %s"%(METRIC_NAME,DBID,INSTANCE_NUMBER,SNAP_ID)
+                    #extracao do txt metrics por coluna
+                    SCRIPT = arquivo[31:].strip() # len do path C:\\temp\\scripts_oracle_fev2018\\
+                    METRIC_NAME = line[0:51].strip()
+                    DBID = line[52:62] .strip()
+                    INSTANCE_NUMBER = line[62:78].strip()
+                    SNAP_ID = line[78:89].strip()
+                    TIMEREF = line[89:102].strip()
+                    END_TIME = line[102:118].strip()
+                    MINVAL = line[118:129].strip()
+                    MAXVAL = line[129:140].strip()
+                    AVERAGE = line[140:151].strip()
+                    STANDARD_DEVIATION = line[151:170].strip()
+                    if METRIC_NAME != "":
+                         print SCRIPT,METRIC_NAME,DBID,INSTANCE_NUMBER,SNAP_ID,TIMEREF,END_TIME,MINVAL,MAXVAL,AVERAGE,STANDARD_DEVIATION
+                         command_sql = "insert into oracle.metrics values( \
+                                  '%s','%s', '%s','%s','%s','%s', \
+                                  str_to_date('%s','%%d/%%m/%%Y %%H:%%i'),'%s', \
+                                  '%s','%s','%s' \
+                                   )"%(SCRIPT,METRIC_NAME,DBID,INSTANCE_NUMBER,SNAP_ID,\
+                                      TIMEREF,END_TIME,MINVAL, \
+                                      MAXVAL,AVERAGE,STANDARD_DEVIATION)
+                         #print mysql.executaQuery("127.0.0.1","root",None,"oracle",command_sql)
+                    else:
+                        print "Linhas vazias serao desconsideradas: %s"%SCRIPT,METRIC_NAME,DBID,INSTANCE_NUMBER
+                        logging.info("Linhas vazias serao desconsideradas: %s %s %s %s \n"%(SCRIPT,METRIC_NAME,DBID,INSTANCE_NUMBER))
         else:
-            print msn
+            logging.info("Erro de OracleChangeScript no arquivo %s \n"%(arquivo))
         #mysql.executaQuery("127.0.0.1","root",None,"oracle","show tables")
         #return msn
         
@@ -138,10 +149,12 @@ if __name__ == '__main__':
 # Leitura de todos os arquivos da pasta 
    ajuste = OracleChangeScript()
    for file in ajuste.FileList(None):
-# ajuste do dbinfo
-   #    print ajuste.ReplaceLine(file,dic_param)
-# ajuste do metrics
-       print ajuste.ImportMetrics(file,dic_metrics)
+# ajuste dos scripts dbinfo
+       if 'dbinfo' in file:
+           print ajuste.ReplaceLine(file,dic_param)
+# ajuste dos scripts metrics
+       if 'metrics' in file:
+           print ajuste.ImportMetrics(file,dic_metrics)
 
 
 
