@@ -58,7 +58,7 @@ class OracleChangeScript:
                     AVERAGE = line[140:151].strip()
                     STANDARD_DEVIATION = line[151:170].strip()
                     if METRIC_NAME != "":
-                         print SCRIPT,METRIC_NAME,DBID,INSTANCE_NUMBER,SNAP_ID,TIMEREF,END_TIME,MINVAL,MAXVAL,AVERAGE,STANDARD_DEVIATION
+                         #print SCRIPT,METRIC_NAME,DBID,INSTANCE_NUMBER,SNAP_ID,TIMEREF,END_TIME,MINVAL,MAXVAL,AVERAGE,STANDARD_DEVIATION
                          command_sql = "insert into oracle.metrics values( \
                                   '%s','%s', '%s','%s','%s','%s', \
                                   str_to_date('%s','%%d/%%m/%%Y %%H:%%i'),'%s', \
@@ -66,7 +66,8 @@ class OracleChangeScript:
                                    )"%(SCRIPT,METRIC_NAME,DBID,INSTANCE_NUMBER,SNAP_ID,\
                                       TIMEREF,END_TIME,MINVAL, \
                                       MAXVAL,AVERAGE,STANDARD_DEVIATION)
-                         #print mysql.executaQuery("127.0.0.1","root",None,"oracle",command_sql)
+                         print command_sql
+                         print mysql.executaQuery("127.0.0.1","root",None,"oracle",command_sql)
                     else:
                         print "Linhas vazias serao desconsideradas: %s"%SCRIPT,METRIC_NAME,DBID,INSTANCE_NUMBER
                         logging.info("Linhas vazias serao desconsideradas: %s %s %s %s \n"%(SCRIPT,METRIC_NAME,DBID,INSTANCE_NUMBER))
@@ -151,7 +152,7 @@ if __name__ == '__main__':
    for file in ajuste.FileList(None):
 # ajuste dos scripts dbinfo
        if 'dbinfo' in file:
-           print ajuste.ReplaceLine(file,dic_param)
+           print ajuste.ReplaceLine(file,dic_dbinfo)
 # ajuste dos scripts metrics
        if 'metrics' in file:
            print ajuste.ImportMetrics(file,dic_metrics)
