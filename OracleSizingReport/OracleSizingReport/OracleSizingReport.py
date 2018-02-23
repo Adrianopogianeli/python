@@ -31,7 +31,6 @@ class OracleChangeScript:
 
 
     def ImportMetrics(self, arquivo,dicRemove):
-
         row_delete = OracleChangeScript()
         if row_delete.ReplaceLine(arquivo,dicRemove) is True:
             mysql = clsDB()
@@ -76,7 +75,51 @@ class OracleChangeScript:
         #mysql.executaQuery("127.0.0.1","root",None,"oracle","show tables")
         #return msn
         
-  
+    def ImportDbinfo(self, arquivo,dicRemove):
+        row_delete = OracleChangeScript()
+        mysql = clsDB()
+        qtd_linhas = 0
+        f = open(arquivo,"r")
+        novo_arquivo = f.readlines()
+        print "Processando o arquivo: %s "%arquivo
+        for line in novo_arquivo:
+            if line.count(':') > 9 and "||" not in line:
+               qtd_linhas = qtd_linhas +1
+               x = line.split(':')
+               HOST_NAME = x[0]
+               DBID = x[1]
+               DB_NAME = x[2]
+               INSTANCE_NAME = x[3]
+               INSTANCE_NUMBER = x[4]
+               NAME = x[5]
+               VERSION = x[6]
+               DETECTED_USAGES = x[7]
+               CURRENTLY_USED = x[8]
+               FIRST_USAGE_DATE = x[9]
+               LAST_USAGE_DATE = x[10]
+               LAST_SAMPLE_DATE  = x[11] 
+              # print 'HOST_NAME %s \n,DBID %s \n,DB_NAME %s \n,INSTANCE_NAME %s \n,INSTANCE_NUMBER %s \n,NAME %s \n,VERSION %s \n,DETECTED_USAGES %s \n,CURRENTLY_USED %s \n,FIRST_USAGE_DATE %s \n,LAST_USAGE_DATE %s \n, LAST_SAMPLE_DATE %s \n'\
+              #        %(HOST_NAME,DBID,DB_NAME,INSTANCE_NAME,INSTANCE_NUMBER,NAME,VERSION,DETECTED_USAGES,CURRENTLY_USED,FIRST_USAGE_DATE,LAST_USAGE_DATE,LAST_SAMPLE_DATE)
+               if HOST_NAME is not None:
+                   command_sql = "insert into oracle.dbinfo values( \
+                                 '%s','%s','%s','%s','%s','%s','%s','%s','%s',\
+                                 str_to_date('%s','%%d/%%m/%%Y'), \
+                                 str_to_date('%s','%%d/%%m/%%Y'), \
+                                 str_to_date('%s','%%d/%%m/%%Y') \
+                                 )"%(HOST_NAME,DBID,DB_NAME,INSTANCE_NAME,INSTANCE_NUMBER,NAME,VERSION,DETECTED_USAGES,CURRENTLY_USED,\
+                                     FIRST_USAGE_DATE,
+                                     LAST_USAGE_DATE,
+                                     LAST_SAMPLE_DATE)
+                   try:                                                       
+                       mysql.executaQuery("127.0.0.1","root",None,"oracle",command_sql)              
+                   except Exception as e:
+                       print "ImportDbinfo - Erro na execucao do insert: %s"%e
+                       logging.info("ImportDbinfo - Erro na execucao do insert: %s"%e)
+                   #print command_sql
+               else:
+                   print "Linhas vazias serao desconsideradas: %s"%SCRIPT,METRIC_NAME,DBID,INSTANCE_NUMBER
+                   logging.info("Linhas vazias serao desconsideradas: %s %s %s %s \n"%(SCRIPT,METRIC_NAME,DBID,INSTANCE_NUMBER))
+        print "Qtd de linhas processadas: %s "%qtd_linhas
 
     def ReplaceLine(self,arquivo,dicReplace):
         try:
@@ -152,10 +195,11 @@ if __name__ == '__main__':
    for file in ajuste.FileList(None):
 # ajuste dos scripts dbinfo
        if 'dbinfo' in file:
-           print ajuste.ReplaceLine(file,dic_dbinfo)
+           print ajuste.ImportDbinfo(file,dic_dbinfo)
+           #print ajuste.ReplaceLine(file,dic_dbinfo)
 # ajuste dos scripts metrics
-       if 'metrics' in file:
-           print ajuste.ImportMetrics(file,dic_metrics)
+       #if 'metrics' in file:
+           #print ajuste.ImportMetrics(file,dic_metrics)
 
 
 
